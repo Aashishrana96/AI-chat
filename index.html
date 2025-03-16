@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AIChat</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="website icon" type="png" href="logo.avif">
+</head>
+<body>
+    <div class="chatbot-container">
+        <div class="chat-header">
+            <div class="header-info">
+                <div class="bot-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 2H2v10l9.29 9.29c.94.94 2.48.94 3.42 0l6.58-6.58c.94-.94.94-2.48 0-3.42L12 2Z"></path>
+                        <path d="M7 7h.01"></path>
+                    </svg>
+                </div>
+                <h2>AIChat</h2>
+            </div>
+        </div>
+
+        <div class="chat-body" id="chatBody">
+            <div class="message bot-message">
+                <div class="bot-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 2H2v10l9.29 9.29c.94.94 2.48.94 3.42 0l6.58-6.58c.94-.94.94-2.48 0-3.42L12 2Z"></path>
+                        <path d="M7 7h.01"></path>
+                    </svg>
+                </div>
+                <div class="message-text">
+                    Hey there 👋<br>How can I help you today?
+                </div>
+            </div>
+        </div>
+
+        <div class="chat-footer">
+            <form id="chatForm" class="chat-form">
+                <div class="input-wrapper">
+                    <textarea 
+                        id="messageInput" 
+                        placeholder="Message..." 
+                        class="message-input"
+                        rows="1"
+                        required
+                    ></textarea>
+                    <div class="button-group">
+                        <button type="button" class="icon-button">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <path d="M8 14s1.5 2 4 2 4-2 4-2"></path>
+                                <line x1="9" y1="9" x2="9.01" y2="9"></line>
+                                <line x1="15" y1="9" x2="15.01" y2="9"></line>
+                            </svg>
+                        </button>
+                        <div class="file-upload-wrappe">
+                            <input type="file" accept="image/*" id = "file-input" hidden>   
+                           <button type="button" class="icon-button" id="file-upload">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
+                            </svg>
+                        </button>
+                        </div>
+                        <button type="submit" id="sendButton" class="send-button" disabled>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="22" y1="2" x2="11" y2="13"></line>
+                                <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+    <script> 
+    
+const API_KEY = "AIzaSyBToAItiRf1jBaLnQBE8fPet4HLCeG7pPw";
+const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
+
+const chatBody = document.getElementById('chatBody');
+const chatForm = document.getElementById('chatForm');
+const messageInput = document.getElementById('messageInput');
+const sendButton = document.getElementById('sendButton');
+const fileInput = document.querySelector("#file-input");
+
+
+messageInput.addEventListener('input', () => {
+    sendButton.disabled = !messageInput.value.trim();
+});
+
+
+messageInput.addEventListener('input', function() {
+    this.style.height = 'auto';
+    this.style.height = (this.scrollHeight) + 'px';
+});
+
+
+messageInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        if (!sendButton.disabled) {
+            chatForm.dispatchEvent(new Event('submit'));
+        }
+    }
+});
+
+async function generateBotResponse(userMessage) {
+    try {
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                contents: [{
+                    parts: [{
+                        text: userMessage
+                    }]
+                }]
+            })
+        });
+
+        const data = await response.json();
+        return data.candidates[0].content.parts[0].text;
+    } catch (error) {
+        console.error('Error:', error);
+        return 'I apologize, but I encountered an error. Please try again.';
+    }
+}
+
+function createMessageElement(message, isUser = false) {
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `message ${isUser ? 'user-message' : 'bot-message'}`;
+
+    if (!isUser) {
+        const botIcon = document.createElement('div');
+        botIcon.className = 'bot-icon';
+        botIcon.innerHTML = `
+            <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 2H2v10l9.29 9.29c.94.94 2.48.94 3.42 0l6.58-6.58c.94-.94.94-2.48 0-3.42L12 2Z"></path>
+                <path d="M7 7h.01"></path>
+            </svg>
+        `;
+        messageDiv.appendChild(botIcon);
+    }
+
+    const messageText = document.createElement('div');
+    messageText.className = 'message-text';
+    messageText.textContent = message;
+    messageDiv.appendChild(messageText);
+
+    return messageDiv;
+}
+
+function createThinkingIndicator() {
+    const messageDiv = document.createElement('div');
+    messageDiv.className = 'message bot-message';
+
+    const botIcon = document.createElement('div');
+    botIcon.className = 'bot-icon';
+    botIcon.innerHTML = `
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2H2v10l9.29 9.29c.94.94 2.48.94 3.42 0l6.58-6.58c.94-.94.94-2.48 0-3.42L12 2Z"></path>
+            <path d="M7 7h.01"></path>
+        </svg>
+    `;
+
+    const thinking = document.createElement('div');
+    thinking.className = 'thinking';
+    thinking.innerHTML = `
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+    `;
+
+    messageDiv.appendChild(botIcon);
+    messageDiv.appendChild(thinking);
+    return messageDiv;
+}
+
+function scrollToBottom() {
+    chatBody.scrollTop = chatBody.scrollHeight;
+}
+
+chatForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const userMessage = messageInput.value.trim();
+    if (!userMessage) return;
+
+
+    messageInput.value = '';
+    messageInput.style.height = 'auto';
+    sendButton.disabled = true;
+
+
+    chatBody.appendChild(createMessageElement(userMessage, true));
+    scrollToBottom();
+
+    
+    const thinkingIndicator = createThinkingIndicator();
+    chatBody.appendChild(thinkingIndicator);
+    scrollToBottom();
+
+    try {
+        
+        const botResponse = await generateBotResponse(userMessage);
+        chatBody.removeChild(thinkingIndicator);
+        chatBody.appendChild(createMessageElement(botResponse, false));
+        scrollToBottom();
+    } catch (error) {
+        console.error('Error:', error);
+        chatBody.removeChild(thinkingIndicator);
+        chatBody.appendChild(createMessageElement('Sorry, I encountered an error. Please try again.', false));
+        scrollToBottom();
+    }
+});
+fileInput.addEventListener("change", () => {
+    const file = fileInput.file[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        console.log(e.target.result);
+    }
+    reader.readAsDataURL(file);
+});
+
+document.querySelector("#file-upload").addEventListener("click", () => fileInput.click());
+    </script>
+</body>
+</html>
